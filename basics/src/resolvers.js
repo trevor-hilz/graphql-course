@@ -1,3 +1,6 @@
+import { GraphQLServer } from 'graphql-yoga';
+import { v4 as uuidv4 } from 'uuid';
+
 const users = [
   {
     id: '1',
@@ -113,6 +116,52 @@ const resolvers = {
       });
     },
   },
+
+  Mutation: {
+    createUser(parent, args, ctx, info) {
+      const emailTaken = users.some((user) => user.email === args.data.email);
+
+      if (emailTaken) throw new Error('Email taken.');
+
+      const user = {
+        id: uuidv4(),
+        ...args.data,
+      };
+
+      users.push(user);
+      return user;
+    },
+
+    createPost(parent, args, ctx, info) {
+      const userExists = users.some((user) => user.id === args.data.author);
+      if (!userExists) throw new Error('user not found');
+
+      const writePost = {
+        id: uuidv4(),
+        ...args.data,
+      };
+      posts.push(writePost);
+      return writePost;
+    },
+
+    createComment(parent, args, ctx, info) {
+      const userExists = users.some((user) => user.id === args.data.author);
+      const postExists = posts.some(
+        (post) => post.id === args.data.post && post.published
+      );
+      if (!userExists || !postExists) throw new Error('user or post not found');
+
+      const comment = {
+        id: uuidv4(),
+        ...args.data,
+      };
+
+      comments.push(comment);
+
+      return comment;
+    },
+  },
+
   Post: {
     author(parent, args, ctx, info) {
       return users.find((user) => user.id === parent.author);
